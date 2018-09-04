@@ -9,6 +9,7 @@
 #include <cctype>
 #include <memory>
 #include <vector>
+#include <algorithm>
 #include <stdarg.h>
 #ifdef WIN32
 #include <windows.h>
@@ -205,7 +206,7 @@ class XMLSerialization
 		size_t deep = 0;
 		bool ExcludeSelf = false;
 		bool NoCRLF = false;
-
+		bool Canonical = false;
 	};
 
 class XMLContent
@@ -330,7 +331,6 @@ class XMLVariable : public XMLContent
 		// Memory usage
 		size_t MemoryUsage() const;
 
-		
 		// Serialization
 		virtual string Serialize(XMLSerialization* srz = 0) const;
 
@@ -523,8 +523,8 @@ class XMLElement
 		void SetElementName(const char* x);
 		void SetElementName(const wchar_t* x);
 		void SetElementParam(unsigned long long p);
-		void SortElements(std::function<bool(const shared_ptr<XMLElement>&e1,const shared_ptr<XMLElement>&e2)>);
-		void SortVariables(std::function<bool(const shared_ptr<XMLVariable>&e1,const shared_ptr<XMLVariable>&e2)>);
+
+	
 		XML_ERROR MoveElement(size_t i,size_t y);
 		XMLVariable& SetValue(const char* vn,const char* vp);
 		XMLContent& SetContent(const char* vp);
@@ -1430,6 +1430,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		}
 
 
+
 	// Compare 
 	inline bool XMLVariable::operator <(const XMLVariable& x) const
 		{
@@ -1982,15 +1983,6 @@ inline int _vscprintf(const char *format, va_list argptr)
 		}
 
 
-	inline void XMLElement::SortElements(std::function<bool(const shared_ptr<XMLElement>&e1,const shared_ptr<XMLElement>&e2)> f)
-		{
-		std::sort(children.begin(),children.end(),f);
-		}
-
-	inline void XMLElement::SortVariables(std::function<bool(const shared_ptr<XMLVariable>&e1,const shared_ptr<XMLVariable>&e2)> f)
-		{
-		std::sort(variables.begin(),variables.end(),f);
-		}
 
 	inline XML_ERROR XMLElement::MoveElement(size_t i,size_t y)
 		{
@@ -2256,6 +2248,14 @@ inline int _vscprintf(const char *format, va_list argptr)
 		string padd;
 		if (!srz->ExcludeSelf)
 			{
+			if (srz->Canonical)
+			{
+				for (size_t i = 0; i < srz->deep; i++)
+				{
+					padd += "   ";
+				}
+			}
+			else
 			if (srz->NoCRLF == false)
 			{
 				for (size_t i = 0; i < srz->deep; i++)
@@ -2267,26 +2267,48 @@ inline int _vscprintf(const char *format, va_list argptr)
 			// <n
 			if (variables.empty() && children.empty() && comments.empty() && contents.empty() && cdatas.empty())
 				{
-				v += Format(srz->NoCRLF ? "%s<%s />" : "%s<%s />\r\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
+				if (srz->Canonical)
+					v += Format("%s<%s></%s> \n",padd.c_str(), EorE(el, srz->NoEnc).c_str(), EorE(el, srz->NoEnc).c_str());
+				else
+					v += Format(srz->NoCRLF ? "%s<%s />" : "%s<%s />\r\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
 				return;
 				}
 
 			v += Format("%s<%s", padd.c_str(), EorE(el, srz->NoEnc).c_str());
 			if (!variables.empty())
 				{
-				for (auto a : variables)
+				vector<shared_ptr<XMLVariable>> v2;
+				if (srz->Canonical)
+				{
+					v2 = variables;
+					std::sort(v2.begin(), v2.end(), [](std::shared_ptr<XML3::XMLVariable> e1, std::shared_ptr<XML3::XMLVariable> e2) -> bool
+					{
+						if (e1->GetName() < e2->GetName())
+						{
+							return true;
+						}
+						return 0;
+					}
+					);
+				}
+				const vector<shared_ptr<XMLVariable>>& v3 = srz->Canonical ? v2 : variables;
+
+				for (auto a : v3)
 					{
 					v += " ";
 					v += a->Serialize(srz);
 					}
 				}
 
-			if (children.empty() && comments.empty() && contents.empty() && cdatas.empty())
+			if (children.empty() && comments.empty() && contents.empty() && cdatas.empty() && !srz->Canonical)
 				{
 				v += srz->NoCRLF ? "/>" : "/>\r\n";
 				return;
 				}
-			v += srz->NoCRLF ? ">" : ">\r\n";
+			if (srz->Canonical)
+				v += "> \n";
+			else
+				v += srz->NoCRLF ? ">" : ">\r\n";
 			}
 
 
@@ -2319,14 +2341,14 @@ inline int _vscprintf(const char *format, va_list argptr)
 			ac(cx,i,i);
 			for (auto& n : cx)
 				{
-				string e = n->Serialize();
-				v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n",padd.c_str(),e.c_str());
+				string e = XMLContent::trim(n->Serialize());
+				if (srz->Canonical)
+					v += e;
+				else
+					v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n",padd.c_str(),e.c_str());
 				}
 
-			XMLSerialization s2;
-			s2.NoCRLF = srz->NoCRLF;
-			s2.NoEnc = srz->NoEnc;
-			s2.ExcludeSelf = 0;
+			XMLSerialization s2 = *srz;
 			s2.deep = srz->deep + 1;
 			a->Serialize(v, &s2);
 			}
@@ -2337,12 +2359,21 @@ inline int _vscprintf(const char *format, va_list argptr)
 		for (auto& n : cx)
 			{
 			string e = XMLContent::trim(n->Serialize());
-			v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n",padd.c_str(),e.c_str());
+			if (srz->Canonical)
+				v += e;
+			else
+				v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n", padd.c_str(), e.c_str());
+
 			}
 
 
-		if (!srz->ExcludeSelf)
-			v += Format(srz->NoCRLF ? "%s</%s>" : "%s</%s>\r\n",padd.c_str(),EorE(el, srz->NoEnc).c_str());
+		if (srz->Canonical)
+			v += Format("%s</%s>\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
+		else
+		{
+			if (!srz->ExcludeSelf)
+				v += Format(srz->NoCRLF ? "%s</%s>" : "%s</%s>\r\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
+		}
 		return;
 		}
 
