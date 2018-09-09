@@ -1,6 +1,8 @@
 ﻿#ifdef _MSC_VER
 #pragma warning(disable:4290)
 #endif
+#define CMSG_SIGNED_ENCODE_INFO_HAS_CMS_FIELDS
+#define CMSG_SIGNER_ENCODE_INFO_HAS_CMS_FIELDS
 #include <stdio.h>
 #include <string>
 #include <functional>
@@ -83,7 +85,7 @@ class BXML
 	};
 
 
-string Char2Base64(const char *Z,size_t s);
+string Char2Base64(const char *Z,size_t s,bool = true);
 void Base64ToChar(const char *Z,size_t s,BXML& out);
 string Decode(const char* src);
 string Format(const char* f,...);
@@ -697,13 +699,16 @@ inline int _vscprintf(const char *format, va_list argptr)
 			return ++jtic;
 		}
 		
-	inline string Char2Base64(const char *Z,size_t s)
+	inline string Char2Base64(const char *Z,size_t s,bool CRLF)
 		{
 		DWORD da = 0;
-		CryptBinaryToString((const BYTE*)Z,(DWORD)s,CRYPT_STRING_BASE64,0,&da);
+		DWORD flg = CRYPT_STRING_BASE64;;
+		if (!CRLF)
+			flg |= CRYPT_STRING_NOCRLF;
+		CryptBinaryToString((const BYTE*)Z,(DWORD)s,flg,0,&da);
 		da += 100;
 		unique_ptr<char> out(new char[da]);
-		CryptBinaryToStringA((const BYTE*)Z,(DWORD)s,CRYPT_STRING_BASE64,out.get(),&da);
+		CryptBinaryToStringA((const BYTE*)Z,(DWORD)s,flg,out.get(),&da);
 		return out.get();
 		}
 
@@ -2250,10 +2255,10 @@ inline int _vscprintf(const char *format, va_list argptr)
 			{
 			if (srz->Canonical)
 			{
-				for (size_t i = 0; i < srz->deep; i++)
+			/*	for (size_t i = 0; i < srz->deep; i++)
 				{
 					padd += "   ";
-				}
+				}*/
 			}
 			else
 			if (srz->NoCRLF == false)
@@ -2268,7 +2273,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 			if (variables.empty() && children.empty() && comments.empty() && contents.empty() && cdatas.empty())
 				{
 				if (srz->Canonical)
-					v += Format("%s<%s></%s> \n",padd.c_str(), EorE(el, srz->NoEnc).c_str(), EorE(el, srz->NoEnc).c_str());
+					v += Format("%s<%s></%s>",padd.c_str(), EorE(el, srz->NoEnc).c_str(), EorE(el, srz->NoEnc).c_str());
 				else
 					v += Format(srz->NoCRLF ? "%s<%s />" : "%s<%s />\r\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
 				return;
@@ -2283,6 +2288,10 @@ inline int _vscprintf(const char *format, va_list argptr)
 					v2 = variables;
 					std::sort(v2.begin(), v2.end(), [](std::shared_ptr<XML3::XMLVariable> e1, std::shared_ptr<XML3::XMLVariable> e2) -> bool
 					{
+						if (strncmp(e1->GetName().c_str(),"xmlns:",6) == 0 && strncmp(e2->GetName().c_str(), "xmlns:", 6) != 0)
+							return true;
+						if (strncmp(e2->GetName().c_str(), "xmlns:", 6) == 0 && strncmp(e1->GetName().c_str(), "xmlns:", 6) != 0)
+							return false;
 						if (e1->GetName() < e2->GetName())
 						{
 							return true;
@@ -2306,7 +2315,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 				return;
 				}
 			if (srz->Canonical)
-				v += "> \n";
+				v += ">";
 			else
 				v += srz->NoCRLF ? ">" : ">\r\n";
 			}
@@ -2343,7 +2352,10 @@ inline int _vscprintf(const char *format, va_list argptr)
 				{
 				string e = XMLContent::trim(n->Serialize());
 				if (srz->Canonical)
+				{
 					v += e;
+					//v += "\n";
+				}
 				else
 					v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n",padd.c_str(),e.c_str());
 				}
@@ -2360,15 +2372,17 @@ inline int _vscprintf(const char *format, va_list argptr)
 			{
 			string e = XMLContent::trim(n->Serialize());
 			if (srz->Canonical)
+			{
 				v += e;
+			//	v += "\n";
+			}
 			else
 				v += Format(srz->NoCRLF ? "%s%s" : "%s%s\r\n", padd.c_str(), e.c_str());
-
 			}
 
 
 		if (srz->Canonical)
-			v += Format("%s</%s>\n", padd.c_str(), EorE(el, srz->NoEnc).c_str());
+			v += Format("%s</%s>", padd.c_str(), EorE(el, srz->NoEnc).c_str());
 		else
 		{
 			if (!srz->ExcludeSelf)
@@ -3145,7 +3159,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		v.reserve(100000);
 
 		v += hdr.Serialize();
-		if (!srz->NoCRLF)
+		if (!srz->NoCRLF && !srz->Canonical)
 			v += "\r\n";
 		if (doctype.GetValue().length())
 			{
@@ -3159,9 +3173,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 			if (!srz->NoCRLF)
 				v += "\r\n";
 			}
-		XMLSerialization s2;
-		s2.NoCRLF = srz->NoCRLF;
-		s2.NoEnc = srz->NoEnc;
+		XMLSerialization s2 = *srz;
 		s2.ExcludeSelf = false;
 		s2.deep = 0;
 		root.Serialize(v,&s2);
