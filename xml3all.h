@@ -2616,6 +2616,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline XML_PARSE XML::Parse(const char* m,size_t len)
 		{
+		Clear();
 //		TICKCOUNT c("Parse");
 		hdrcomments.reserve(3);
 
