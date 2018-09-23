@@ -329,6 +329,8 @@ class XMLVariable : public XMLContent
 		bool operator ==(const char* x) const;
 		// Gets
 		const string& GetName() const;
+		bool IsNS() const;
+		string GetNS() const;
 
 		// Memory usage
 		size_t MemoryUsage() const;
@@ -557,6 +559,7 @@ class XMLElement
 		size_t RemoveElement(XMLElement* p);
 
 		shared_ptr<XMLElement> RemoveElementAndKeep(size_t i) throw(XML_ERROR);
+		void RemoveDuplicateNamespaces(const char* vn = 0);
 
 		void clear();
 
@@ -1467,6 +1470,17 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return n;
 		}
 
+	inline bool XMLVariable::IsNS() const
+	{
+		if (strchr(n.c_str(), ':'))
+			return true;
+		return false;
+	}
+
+	inline string XMLVariable::GetNS() const
+	{
+		return "";//*
+	}
 
 	// Memory usage
 	inline size_t XMLVariable::MemoryUsage() const
@@ -2178,6 +2192,31 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return children.size();
 		}
 
+	inline void XMLElement::RemoveDuplicateNamespaces(const char* vn)
+	{
+		if (vn)
+		{
+			RemoveVariableZ(vn);
+			for (auto& ch : children)
+				ch->RemoveDuplicateNamespaces(vn);
+			return;
+		}
+
+		for (size_t i = 0; i < variables.size(); i++)
+		{
+			shared_ptr<XMLVariable>& cc = variables[i];
+			if (cc->IsNS())
+			{
+				for (auto& ch : children)
+					ch->RemoveDuplicateNamespaces(cc->GetName().c_str());
+			}
+		}
+
+		for (auto& ch : children)
+			ch->RemoveDuplicateNamespaces(0);
+
+	}
+	
 	inline size_t XMLElement::RemoveElement(XMLElement* p)
 		{
 		for (size_t i = 0; i < children.size(); i++)
