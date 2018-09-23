@@ -533,7 +533,7 @@ class XMLElement
 
 		// Find
 		shared_ptr<XMLElement> FindElementZ(const char* n,bool ForceCreate = false);
-		shared_ptr<XMLVariable> FindVariableZ(const char* n,bool ForceCreate = false,const char* defv = "");
+		shared_ptr<XMLVariable> FindVariableZ(const char* n,bool ForceCreate = false,const char* defv = "",size_t* pidx = 0);
 		shared_ptr<XMLVariable> FindVariable(const char* n) const;
 
 		// Inserts
@@ -564,6 +564,7 @@ class XMLElement
 		size_t RemoveAllVariables();
 
 		size_t RemoveVariable(size_t i);
+		bool RemoveVariableZ(const char* n);
 
 		shared_ptr<XMLVariable> RemoveVariableAndKeep(size_t i) throw (XML_ERROR);
 
@@ -2033,7 +2034,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		}
 
 
-	inline shared_ptr<XMLVariable> XMLElement::FindVariableZ(const char* n,bool ForceCreate,const char* defv)
+	inline shared_ptr<XMLVariable> XMLElement::FindVariableZ(const char* n,bool ForceCreate,const char* defv,size_t* pidx)
 		{
 		if (!n)
 			return 0;
@@ -2041,8 +2042,12 @@ inline int _vscprintf(const char *format, va_list argptr)
 			{
 			shared_ptr<XMLVariable>& cc = variables[i];
 			const string& cn = cc->GetName();
-			if (strcmp(cn.c_str(),n) == 0)
+			if (strcmp(cn.c_str(), n) == 0)
+			{
+				if (pidx)
+					*pidx = i;
 				return cc;
+			}
 			}
 		if (ForceCreate == 0)
 			return 0;
@@ -2220,6 +2225,16 @@ inline int _vscprintf(const char *format, va_list argptr)
 		variables.erase(variables.begin() + i);
 		return variables.size();
 		}
+
+	inline bool XMLElement::RemoveVariableZ(const char* n)
+	{
+		size_t idx = 0;
+		auto v = FindVariableZ(n,false,"",&idx);
+		if (!v)
+			return false;
+		RemoveVariable(idx);
+		return true;
+	}
 
 	inline shared_ptr<XMLVariable> XMLElement::RemoveVariableAndKeep(size_t i) throw (XML_ERROR)
 		{
