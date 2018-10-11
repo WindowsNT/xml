@@ -2406,7 +2406,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 			ac(cx,i,i);
 			for (auto& n : cx)
 				{
-				string e = XMLContent::trim(n->Serialize());
+				string e = XMLContent::trim(n->Serialize(srz));
 				if (srz->Canonical)
 				{
 					v += e;
@@ -2426,7 +2426,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		ac(cx,(size_t)-1,children.size());
 		for (auto& n : cx)
 			{
-			string e = XMLContent::trim(n->Serialize());
+			string e = XMLContent::trim(n->Serialize(srz));
 			if (srz->Canonical)
 			{
 				v += e;
