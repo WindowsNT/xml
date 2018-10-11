@@ -1564,8 +1564,10 @@ inline int _vscprintf(const char *format, va_list argptr)
 		XMLSerialization defsrz;
 		if (!srz)
 			srz = &defsrz;
-		return Format("<!--%s-->",v.c_str());
-		}
+		if (srz->Canonical)
+		return Format("<!-- %s -->",trim(v).c_str());
+			return Format("<!--%s-->", v.c_str());
+	}
 
 
 
