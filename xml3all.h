@@ -544,6 +544,7 @@ class XMLElement
 		XMLElement& AddElement(const XMLElement& c);
 		XMLElement& AddElement(XMLElement&& c);
 		XMLElement& AddElement(const char* n = "");
+		shared_ptr<XMLElement> AddElement2(const char* n = "");
 		void AddElements(const std::initializer_list<string>& s);
 		void SetVariables(const std::initializer_list<string>& s);
 		XMLVariable& AddVariable(const char* vn = "n",const char* vv = "v",size_t p = -1);
@@ -2103,6 +2104,12 @@ inline int _vscprintf(const char *format, va_list argptr)
 		XMLElement c = n;
 		return *InsertElement((size_t)-1,std::forward<XMLElement>(c));
 		}
+	inline shared_ptr<XMLElement> XMLElement::AddElement2(const char* n)
+	{
+		XMLElement c = n;
+		return InsertElement((size_t)-1, std::forward<XMLElement>(c));
+	}
+
 	inline void XMLElement::AddElements(const std::initializer_list<string>& s)
 		{
 		for (auto& a : s)
