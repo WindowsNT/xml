@@ -570,7 +570,7 @@ class XMLElement
 		size_t RemoveVariable(size_t i);
 		bool RemoveVariableZ(const char* n);
 
-		shared_ptr<XMLVariable> RemoveVariableAndKeep(size_t i) throw (XML_ERROR);
+		shared_ptr<XMLVariable> RemoveVariableAndKeep(size_t i);
 
 		string EorE(const string& s,bool N) const;
 		string Serialize(XMLSerialization* srz = 0) const;
@@ -2284,7 +2284,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return true;
 	}
 
-	inline shared_ptr<XMLVariable> XMLElement::RemoveVariableAndKeep(size_t i) throw (XML_ERROR)
+	inline shared_ptr<XMLVariable> XMLElement::RemoveVariableAndKeep(size_t i)
 		{
 		if (i >= variables.size())
 			throw XML_ERROR::INVALIDARG;
