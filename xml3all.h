@@ -559,7 +559,7 @@ class XMLElement
 		size_t RemoveElement(size_t i);
 		size_t RemoveElement(XMLElement* p);
 
-		shared_ptr<XMLElement> RemoveElementAndKeep(size_t i) throw(XML_ERROR);
+		shared_ptr<XMLElement> RemoveElementAndKeep(size_t i);
 		void RemoveDuplicateNamespaces(const char* vn = 0);
 
 		void clear();
@@ -2239,7 +2239,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return children.size();
 		}
 
-	inline shared_ptr<XMLElement> XMLElement::RemoveElementAndKeep(size_t i) throw(XML_ERROR)
+	inline shared_ptr<XMLElement> XMLElement::RemoveElementAndKeep(size_t i)
 		{
 		if (i >= children.size())
 			throw XML_ERROR::INVALIDARG;
