@@ -20,6 +20,8 @@
 
 #pragma once
 
+#ifndef _XML3ALL_H
+#define _XML3ALL_H
 namespace XML3
 {
 
@@ -230,7 +232,7 @@ class XMLContent
 		bool operator==(const XMLContent& t) const;
 		operator const string& () const;
 
-		static std::string XMLContent::trim(const std::string& str,
+		static std::string trim(const std::string& str,
 			const std::string& whitespace = " \r\n\t");
 
 		// Sets
@@ -3250,6 +3252,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 
 };
+#endif
 
 
 
