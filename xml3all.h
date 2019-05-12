@@ -1251,6 +1251,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline const string& XMLContent::SetBinaryValue(const char* data,size_t len)
 		{
+		if (!len || !data)
+			return v;
 		v = Char2Base64(data,len);
 		return v;
 		}
