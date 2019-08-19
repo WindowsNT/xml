@@ -708,6 +708,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 		
 	inline string Char2Base64(const char *Z,size_t s,bool CRLF)
 		{
+		if (!s)
+			return "";
 		DWORD da = 0;
 		DWORD flg = CRYPT_STRING_BASE64;;
 		if (!CRLF)
