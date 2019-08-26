@@ -259,7 +259,9 @@ class XMLContent
 		const string& SetBinaryValue(const char* data,size_t len);
 
 		void SetValue(const char* VV);
+		void SetWideValue(const wchar_t* VV);
 		void SetValue(const string& VV);
+		void SetValue(const wstring& VV);
 		void Clear();
 		void SetEP(size_t epp);
 
@@ -1266,15 +1268,27 @@ inline int _vscprintf(const char *format, va_list argptr)
 			v.clear();
 			return;
 			}
-
-
 		v = VV;
 		}
+
+	inline void XMLContent::SetWideValue(const wchar_t* VV)
+	{
+		if (!VV)
+		{
+			v.clear();
+			return;
+		}
+		v = XMLU(VV);
+	}
 
 	inline void XMLContent::SetValue(const string& VV)
 		{
 		v = VV;
 		}
+	inline void XMLContent::SetValue(const wstring& VV)
+	{
+		v = XMLU(VV.c_str());
+	}
 	inline void XMLContent::Clear()
 		{
 		v.clear();
