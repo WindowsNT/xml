@@ -249,6 +249,8 @@ class XMLContent
 			return v;
 			}
 
+		const string& SetValueDouble(double v5) { return SetFormattedValue<double>("%f", v5); }
+		const string& SetValueFloat(float v5) { return SetFormattedValue<float>("%f", v5); }
 		const string& SetValueInt(int v5) { return SetFormattedValue<int>("%i",v5); }
 		const string& SetValueUInt(unsigned int v5) { return SetFormattedValue<unsigned int>("%u",v5); }
 		const string& SetValueLongLong(long long v5) { return SetFormattedValue<long long >("%lli",v5); }
@@ -294,6 +296,14 @@ class XMLContent
 			{
 			return GetFormattedValue<unsigned long long>("%llu",def);
 			}
+		float GetValueFloat(float def = 0)
+		{
+			return GetFormattedValue<float>("%f", def);
+		}
+		double GetValueDouble(double def = 0)
+		{
+			return GetFormattedValue<double>("%f", def);
+		}
 
 		const string& GetValue() const;
 		wstring GetWideValue(int CP = CP_UTF8) const;
