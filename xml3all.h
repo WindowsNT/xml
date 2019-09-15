@@ -1316,6 +1316,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 		size_t s = v.length();
 		size_t output_size = ((s * 4) / 3) + (s / 96) + 6 + 1000;
 		BXML b;
+		if(s == 0)
+			return b;
 		b.Resize(output_size);
 		Base64ToChar(v.c_str(),s,b);
 		return b;
