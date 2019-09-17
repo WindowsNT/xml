@@ -778,6 +778,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline char* BXML::p()
 		{
+		if (d.size() == 0)
+			return 0;
 		return &d[0];
 		}
 
