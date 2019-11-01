@@ -634,8 +634,8 @@ class XML
 		// Savers
 		size_t SaveFP(FILE* fp) const;
 		XML_ERROR Save() const;
-		XML_ERROR Save(const char* f) const;
-		XML_ERROR Save(const wchar_t* f) const;
+		XML_ERROR Save(const char* f,XMLSerialization* se = 0) const;
+		XML_ERROR Save(const wchar_t* f, XMLSerialization* se = 0) const;
 
 
 		// Loaders
@@ -2581,7 +2581,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		}
 
 
-	inline XML_ERROR XML::Save(const char* f) const
+	inline XML_ERROR XML::Save(const char* f,XMLSerialization* se) const
 		{
 		if (!f)
 			f = fname.c_str();
@@ -2589,7 +2589,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		fopen_s(&fp,f, "wb");
 		if (!fp)
 			return XML_ERROR::SAVEFAILED;
-		string s = Serialize();
+		string s = Serialize(se);
 		if (hdr.GetEncoding() == "UTF-16")
 			{
 			fwrite("\xFE\xFF",1,3,fp);
@@ -2611,7 +2611,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return XML_ERROR::OK;
 		}
 
-	inline XML_ERROR XML::Save(const wchar_t* f) const
+	inline XML_ERROR XML::Save(const wchar_t* f, XMLSerialization* se) const
 		{
 #ifdef _MSC_VER
 		XMLU wf(fname.c_str());
@@ -2619,7 +2619,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		_wfopen_s(&fp,f ? f : wf.operator const wchar_t *(), L"wb");
 		if (!fp)
 			return XML_ERROR::SAVEFAILED;
-		string s = Serialize();
+		string s = Serialize(se);
 		if (hdr.GetEncoding() == "UTF-16")
 			{
 			fwrite("\xFE\xFF",1,3,fp);
