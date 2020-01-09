@@ -440,6 +440,7 @@ class XMLElement
 		unsigned long long param = 0;
 		XMLId parent = 0;
 		XMLId id;
+		XMLElement* par = 0;
 		
 		static void CloneMirror(XMLElement& to,const XMLElement& from);
 
@@ -533,7 +534,7 @@ class XMLElement
 		unsigned long long GetElementParam() const;
 		const string& GetElementName() const;
 		void GetAllChildren(vector<shared_ptr<XMLElement>>& ch) const;
-		shared_ptr<XMLElement> GetParent(shared_ptr<XMLElement> r) const;
+//		shared_ptr<XMLElement> GetParent(shared_ptr<XMLElement> r) const;
 		XMLElement* GetParent(XMLElement* r) const;
 		size_t GetElementIndex(const XMLElement& e) const;
 
@@ -1959,27 +1960,34 @@ inline int _vscprintf(const char *format, va_list argptr)
 			}
 		}
 
-	inline shared_ptr<XMLElement> XMLElement::GetParent(shared_ptr<XMLElement> r) const
+/*	inline shared_ptr<XMLElement> XMLElement::GetParent(shared_ptr<XMLElement> r) const
 		{
+		if (r->par)
+			return r->par;
+		if (r->id == parent)
+			return r;
 		for (auto a : r->children)
 			{
 			if (a->id == parent)
 				return a;
 			}
-		if (r->id == parent)
-			return r;
 		return 0;
 		}
+*/
 
 	inline XMLElement* XMLElement::GetParent(XMLElement* r) const
 		{
-		for (auto a : r->children)
+		if (r->par)
+			return r->par;
+		if (r->id == parent)
+			return r;
+		vector<shared_ptr<XMLElement>> ch;
+		r->GetAllChildren(ch);
+		for (auto a : ch)
 			{
 			if (a->id == parent)
 				return a.get();
 			}
-		if (r->id == parent)
-			return r;
 		return 0;
 		}
 
@@ -2110,6 +2118,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		shared_ptr<XMLElement> xx = make_shared<XMLElement>(XMLElement(x));
 		children.insert(children.begin() + y,xx);
 		children[y]->parent = id;
+		children[y]->par = this;
 		return children[y];
 		}
 	inline shared_ptr<XMLElement> XMLElement::InsertElement(size_t y,XMLElement&& x)
@@ -2119,6 +2128,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 		shared_ptr<XMLElement> xx = make_shared<XMLElement>(XMLElement(std::forward<XMLElement>(x)));
 		children.insert(children.begin() + y,xx);
 		children[y]->parent = id;
+		children[y]->par = this;
 		return children[y];
 		}
 	inline XMLElement& XMLElement::AddElement(const XMLElement& c)
