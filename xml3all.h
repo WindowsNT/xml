@@ -1961,9 +1961,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline shared_ptr<XMLElement> XMLElement::GetParent(shared_ptr<XMLElement> r) const
 		{
-		vector<shared_ptr<XMLElement>> ch;
-		r->GetAllChildren(ch);
-		for (auto a : ch)
+		for (auto a : r->children)
 			{
 			if (a->id == parent)
 				return a;
@@ -1975,9 +1973,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline XMLElement* XMLElement::GetParent(XMLElement* r) const
 		{
-		vector<shared_ptr<XMLElement>> ch;
-		r->GetAllChildren(ch);
-		for (auto a : ch)
+		for (auto a : r->children)
 			{
 			if (a->id == parent)
 				return a.get();
