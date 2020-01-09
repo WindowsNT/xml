@@ -1977,8 +1977,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 	inline XMLElement* XMLElement::GetParent(XMLElement* r) const
 		{
-		if (r->par)
-			return r->par;
+		if (par)
+			return par;
 		if (r->id == parent)
 			return r;
 		vector<shared_ptr<XMLElement>> ch;
