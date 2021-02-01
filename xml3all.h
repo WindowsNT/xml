@@ -1,5 +1,6 @@
 ﻿#ifdef _MSC_VER
 #pragma warning(disable:4290)
+#pragma warning(disable:4789)
 #endif
 #define CMSG_SIGNED_ENCODE_INFO_HAS_CMS_FIELDS
 #define CMSG_SIGNER_ENCODE_INFO_HAS_CMS_FIELDS
@@ -302,7 +303,7 @@ class XMLContent
 		}
 		double GetValueDouble(double def = 0)
 		{
-			return GetFormattedValue<double>("%f", def);
+			return GetFormattedValue<double>("%lf", def);
 		}
 
 		const string& GetValue() const;
@@ -573,6 +574,7 @@ class XMLElement
 		size_t RemoveAllElements();
 		size_t RemoveElement(size_t i);
 		size_t RemoveElement(XMLElement* p);
+		size_t RemoveElementByName(const char* n);
 
 		shared_ptr<XMLElement> RemoveElementAndKeep(size_t i);
 		void RemoveDuplicateNamespaces(const char* vn = 0);
@@ -617,6 +619,10 @@ class XML
 
 
 	public:
+
+		string GetFName() {
+			return fname;
+		}
 
 		// Constructors
 		XML();
@@ -2241,6 +2247,19 @@ inline int _vscprintf(const char *format, va_list argptr)
 		return children.size();
 		}
 
+	inline size_t XMLElement::RemoveElementByName(const char* n)
+	{
+		for (size_t i = 0; i < children.size(); i++)
+		{
+			if (strcmp(children[i]->GetElementName().c_str(), n) == 0)
+			{
+				children.erase(children.begin() + i);
+				return i;
+			}
+		}
+		return (size_t)-1;
+	}
+
 	inline void XMLElement::RemoveDuplicateNamespaces(const char* vn)
 	{
 		if (vn)
@@ -2737,12 +2756,15 @@ inline int _vscprintf(const char *format, va_list argptr)
 			ENDCD,
 			STARTEL,
 			ENDEL,
-			ENDDOCUMENT
+			ENDDOCUMENT,
+			STARTQ,
+			ENDQ,
 			};
 
 		int InCData = 0;
 		int InComment = 0;
 		int InHeader = 0;
+		int InQ = 0;
 		string t1;
 		t1.reserve(100000);
 		XMLElement* l = 0;
@@ -3063,7 +3085,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 
 			// Variable Tests
 			bool CanVariable = false;
-			if (!InComment && !InCData)
+			if (!InComment && !InCData && !InQ)
 				{
 				if (InHeader == 1)
 					CanVariable = true;
@@ -3071,7 +3093,7 @@ inline int _vscprintf(const char *format, va_list argptr)
 				if (l && OutsideElementLine == 0)
 					CanVariable = true;
 				}
-			if (_strnicmp(mm,"=",1) == 0 && CanVariable && InVar != 2)
+			if (_strnicmp(mm,"=",1) == 0 && CanVariable && InVar != 2 && !InQ)
 				{
 				e = ParseFunc(PARSEELEMENT::STARTVAR);
 				if (e != XML_PARSE::OK)
@@ -3119,6 +3141,16 @@ inline int _vscprintf(const char *format, va_list argptr)
 					continue;
 					}
 
+				if (_strnicmp(mm, "<?", 2) == 0 && OutsideElementLine == 1)
+				{					
+					e = ParseFunc(PARSEELEMENT::STARTEL);
+					if (e != XML_PARSE::OK)
+						break;
+					InQ = 1;
+					OutsideElementLine = 0;
+					i += 2;
+					continue;
+				}
 
 				if (_strnicmp(mm,"<",1) == 0 && OutsideElementLine == 1)
 					{
@@ -3137,9 +3169,8 @@ inline int _vscprintf(const char *format, va_list argptr)
 					continue;
 					}
 
-				if (_strnicmp(mm,"/>",2) == 0)
+				if (_strnicmp(mm,"/>",2) == 0 || _strnicmp(mm, "?>", 2) == 0)
 					{
-
 					// El name?
 					if (l && PendingElName && !t1.empty())
 						{
@@ -3152,9 +3183,12 @@ inline int _vscprintf(const char *format, va_list argptr)
 					if (e != XML_PARSE::OK)
 						break;
 					OutsideElementLine = 1;
+					InQ = 0;
 					i += 2;
 					continue;
 					}
+
+			
 
 
 				if (_strnicmp(mm,">",1) == 0 && (OutsideElementLine == 0 || PendingElNameClosing) && l)
